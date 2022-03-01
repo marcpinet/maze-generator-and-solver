@@ -23,6 +23,11 @@ class Cell:
         self.is_start = False
         self.is_end = False
 
+    def __eq__(self, cell: "Cell"):
+        if isinstance(cell, self.__class__):
+            return self.id == cell.id
+        return False
+
     def set_visited(self, visited: bool) -> None:
         """Sets the visited status of the cell
 

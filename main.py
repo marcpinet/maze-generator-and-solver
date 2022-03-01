@@ -1,9 +1,6 @@
-import os
 import maze.maze as m
 import maze.maze_tools as mt
 import visual.colors as vc
-
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
 from abc import abstractmethod
 
