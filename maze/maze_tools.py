@@ -10,13 +10,13 @@ import maze.maze as m
 import visual.colors as vc
 
 
-class MazeBuilder:
+class MazeGenerator:
     ALGORITHMS = []
 
     def __init__(self, num: int):
         self.num = num
 
-        MazeBuilder.ALGORITHMS = {
+        MazeGenerator.ALGORITHMS = {
             method_name.title().replace("_", " "): getattr(self, method)
             for method_name, method in zip(dir(self), dir(self))
             if callable(getattr(self, method_name))
@@ -24,11 +24,11 @@ class MazeBuilder:
             and method_name.lower() != "build"
         }
 
-        self.algorithm = list(MazeBuilder.ALGORITHMS.values())[num]
+        self.algorithm = list(MazeGenerator.ALGORITHMS.values())[num]
 
     def build(self, maze: m.Maze) -> None:
         self.algorithm(maze)
-        maze.is_built = True
+        maze.is_generated = True
         maze.reset_cells_state()
 
     @staticmethod
@@ -241,10 +241,10 @@ class MazeDrawer(Window):
     CELL_SIZE = -1
 
     def __init__(
-        self, maze_builder: MazeBuilder, maze_solver: MazeSolver, maze: m.Maze
+        self, maze_generator: MazeGenerator, maze_solver: MazeSolver, maze: m.Maze
     ):
         super().__init__()
-        self.maze_builder = maze_builder
+        self.maze_generator = maze_generator
         self.maze_solver = maze_solver
         self.maze = maze
 
@@ -253,7 +253,7 @@ class MazeDrawer(Window):
         ) / maze.height  # Width and height of the cell
 
         pygame.display.set_caption(
-            f"Gen: {list(MazeBuilder.ALGORITHMS.keys())[self.maze_builder.num]} - Solve: {list(MazeSolver.ALGORITHMS.keys())[self.maze_solver.num]}"
+            f"Gen: {list(MazeGenerator.ALGORITHMS.keys())[self.maze_generator.num]} - Solve: {list(MazeSolver.ALGORITHMS.keys())[self.maze_solver.num]}"
         )
 
     @staticmethod
@@ -363,9 +363,9 @@ class MazeDrawer(Window):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if not self.maze.is_built:
+                    if not self.maze.is_generated:
                         print("Building...")
-                        self.maze_builder.build(self.maze)
+                        self.maze_generator.build(self.maze)
                     elif not self.maze.is_solved:
                         print("Solving...")
                         self.maze_solver.solve(self.maze)

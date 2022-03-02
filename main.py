@@ -20,7 +20,7 @@ def main():
 
     # Intializing variables
 
-    _ = mt.MazeBuilder(0)  # Needed to init the MazeBuilder.ALGORITHMS list
+    _ = mt.MazeGenerator(0)  # Needed to init the MazeBuilder.ALGORITHMS list
     _ = mt.MazeSolver(0)  # Needed to init the MazeSolver.ALGORITHMS list
 
     alg_gen, alg_sol, width, height = -1, -1, -1, -1
@@ -28,14 +28,14 @@ def main():
 
     # Getting the user's inputs
 
-    for i in range(len(mt.MazeBuilder.ALGORITHMS)):
+    for i in range(len(mt.MazeGenerator.ALGORITHMS)):
         print(
-            f"{vc.CMDColors.YELLOW} {i}: {list(mt.MazeBuilder.ALGORITHMS.keys())[i]} {vc.CMDColors.RESET}"
+            f"{vc.CMDColors.YELLOW} {i}: {list(mt.MazeGenerator.ALGORITHMS.keys())[i]} {vc.CMDColors.RESET}"
         )
 
     print()
 
-    while alg_gen not in range(len(mt.MazeBuilder.ALGORITHMS)):
+    while alg_gen not in range(len(mt.MazeGenerator.ALGORITHMS)):
         alg_gen = ask_for_int("Input the n° of the algorithm for the generation: ")
 
     print()
@@ -76,14 +76,8 @@ def main():
 
     # Initializing
     maze = m.Maze(width, height)
-    maze_builder = mt.MazeBuilder(alg_gen)
+    maze_generator = mt.MazeGenerator(alg_gen)
     maze_solver = mt.MazeSolver(alg_sol)
-
-    # Building
-    # maze_builder.build(maze)
-
-    # Solving
-    # maze_solver.solve(maze)
 
     # Drawing
     print(
@@ -92,14 +86,20 @@ def main():
         + vc.CMDColors.FAIL
         + "SPACE"
         + vc.CMDColors.CYAN
-        + " to start building the maze.\nPress again to solve it.\nPress "
+        + " to start building the maze.\nPress "
+        + vc.CMDColors.FAIL
+        + "SPACE"
+        + vc.CMDColors.CYAN
+        + " again to solve it.\nPress "
         + vc.CMDColors.HEADER
         + "CTRL+C"
         + vc.CMDColors.CYAN
         + " in the terminal to exit."
         + vc.CMDColors.RESET
     )
-    maze_drawer = mt.MazeDrawer(maze_builder, maze_solver, maze)
+
+    # Starting the animations
+    maze_drawer = mt.MazeDrawer(maze_generator, maze_solver, maze)
     maze_drawer.start()
 
 

@@ -6,7 +6,7 @@ class Wall:
         # Each wall separates a cell from another, except borders
         self.cell1 = None
         self.cell2 = None
-        
+
     def is_border(self):
         """Checks if the wall is a border
 
@@ -22,7 +22,7 @@ class Wall:
     def close(self) -> None:
         """Closes the wall"""
         self.is_opened = False
-        
+
     def get_cells(self) -> list["Cell"]:
         """Get all cells of the wall (both cells actually)
 
@@ -64,15 +64,15 @@ class Cell:
         if isinstance(cell, self.__class__):
             return self.id == cell.id
         return False
-    
+
     def reset_state(self):
         self.is_visited = False
-    
+
     def get_walls(self) -> list[Wall]:
         l = [self.top_wall, self.bottom_wall, self.left_wall, self.right_wall]
-        
+
         return list(filter(lambda m: not m.is_border(), l))
-    
+
     def get_opened_walls(self) -> list[Wall]:
         l = []
         if self.top_wall.is_opened:
@@ -83,9 +83,9 @@ class Cell:
             l.append(self.left_wall)
         if self.right_wall.is_opened:
             l.append(self.right_wall)
-            
+
         return list(filter(lambda m: not m.is_border(), l))
-    
+
     def get_closed_walls(self) -> list[Wall]:
         l = []
         if not self.top_wall.is_opened:
@@ -96,7 +96,7 @@ class Cell:
             l.append(self.left_wall)
         if not self.right_wall.is_opened:
             l.append(self.right_wall)
-            
+
         return list(filter(lambda m: not m.is_border(), l))
 
     def is_edge_and_not_corner(self) -> bool:
@@ -156,7 +156,7 @@ class Cell:
             l.append(self.left_cell)
         if self.right_cell is not None:
             l.append(self.right_cell)
-            
+
         return l
 
     def get_neighbors_according_to_walls(self) -> list["Cell"]:
@@ -261,7 +261,7 @@ class Maze:
         self.link_cells()
         self.link_walls()
 
-        self.is_built = False
+        self.is_generated = False
         self.is_solved = False
 
     def __str__(self):
@@ -285,7 +285,7 @@ class Maze:
                     cell.left_cell = self.cells[i][j - 1]
                 if j < self.width - 1:
                     cell.right_cell = self.cells[i][j + 1]
-                    
+
     def reset_cells_state(self):
         """Resets the state of all cells"""
         for i in range(self.height):
@@ -351,7 +351,7 @@ class Maze:
                     cell.right_cell.left_wall.cell2 = self.cells[i][j + 1]
                     # Link the left wall of the cell above to the cell
                     cell.right_cell.left_wall = cell.right_wall
-                    
+
     def has_unvisited_cells(self) -> bool:
         for row in self.cells:
             for cell in row:
