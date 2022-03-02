@@ -20,3 +20,4 @@ class Color:
     RED = pygame.Color("red")
     BLUE = pygame.Color("blue")
     GREEN = pygame.Color("green")
+    YELLOW = pygame.Color("yellow")

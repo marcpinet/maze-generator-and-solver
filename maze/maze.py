@@ -56,6 +56,9 @@ class Cell:
         self.is_visited = False
         self.is_start = False
         self.is_end = False
+        self.is_colored = False
+
+        self.number_of_uses = 0
 
     def __str__(self):
         return f"{self.id}"
@@ -138,6 +141,9 @@ class Cell:
             )
         )
 
+    def used_but_not_visited(self) -> bool:
+        self.number_of_uses += 1
+
     def set_visited(self, visited: bool) -> None:
         """Sets the visited status of the cell
 
@@ -145,6 +151,7 @@ class Cell:
             visited (bool): The visited status to set
         """
         self.is_visited = visited
+        self.number_of_uses += 1
 
     def get_neighbors(self) -> list["Cell"]:
         l = []
@@ -353,8 +360,8 @@ class Maze:
                     cell.right_cell.left_wall = cell.right_wall
 
     def has_unvisited_cells(self) -> bool:
-        for row in self.cells:
-            for cell in row:
-                if not cell.is_visited:
-                    return True
+        cells = self.get_all_cells()
+        for cell in cells:
+            if not cell.is_visited:
+                return True
         return False

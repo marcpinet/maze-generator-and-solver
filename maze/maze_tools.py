@@ -40,6 +40,10 @@ class MazeGenerator:
         """
         maze.cells[0][0].set_visited(True)
         stack = [maze.cells[0][0]]
+
+        # For coloring
+        old_cell = None
+
         while len(stack) != 0:
 
             current_cell = stack.pop()
@@ -51,8 +55,17 @@ class MazeGenerator:
                 chosen_cell.set_visited(True)
                 stack.append(chosen_cell)
 
+            else:
+                current_cell.used_but_not_visited()
+
             if Window.BUILD_ANIMATION:
-                MazeDrawer.colorize_cell(current_cell)
+                MazeDrawer.colorize_all_cells(
+                    [c for c in maze.get_all_cells() if c is not chosen_cell]
+                )
+                MazeDrawer.colorize_cell(
+                    current_cell, imposed_color=vc.Color.BLUE, priority=1
+                )
+                old_cell = chosen_cell
                 MazeDrawer.refresh_drawing_on_screen(
                     maze
                 )  # Needs to be here to refresh the drawing on screen each time
@@ -84,8 +97,12 @@ class MazeGenerator:
                     del sets[i]
                     break
 
+        # Only for coloring
+        visited_cells = []
+
         sets = [[cell] for cell in maze.get_all_cells()]
         walls = maze.get_all_walls()
+
         random.shuffle(walls)
         while len(walls) > 0:
             current_wall = walls.pop()
@@ -94,18 +111,26 @@ class MazeGenerator:
                 __join_sets(sets, current_wall.cell1, current_wall.cell2)
 
             if Window.BUILD_ANIMATION:
-                MazeDrawer.colorize_cell(
-                    current_wall.cell1, imposed_color=vc.Color.BLUE
+
+                visited_cells.append(current_wall.cell1)
+                visited_cells.append(current_wall.cell2)
+                current_wall.cell1.set_visited(True)
+                current_wall.cell2.set_visited(True)
+
+                MazeDrawer.colorize_all_cells(
+                    visited_cells, imposed_color=vc.Color.YELLOW, priority=0
                 )
-                MazeDrawer.colorize_cell(
-                    current_wall.cell2, imposed_color=vc.Color.BLUE
-                )
+
                 MazeDrawer.refresh_drawing_on_screen(
                     maze
                 )  # Needs to be here to refresh the drawing on screen each time
 
     @staticmethod
     def randomized_prim(maze: m.Maze) -> None:
+
+        # For colorizing
+        visited_cells = []
+
         random_cell = random.choice(maze.get_all_cells())
         random_cell.set_visited(True)
         wall_list = []
@@ -121,18 +146,29 @@ class MazeGenerator:
                 cell for cell in random_wall.get_cells() if cell.is_visited
             ]
 
+            for cell in visited_cells_between_wall:
+                cell.used_but_not_visited()
+
             if len(visited_cells_between_wall) == 1:
                 random_wall.open()
-                random_wall.cell1.is_visited = True
-                random_wall.cell2.is_visited = True
+                random_wall.cell1.set_visited(True)
+                random_wall.cell2.set_visited(True)
                 wall_list += random_wall.cell1.get_closed_walls()
                 wall_list += random_wall.cell2.get_closed_walls()
 
                 # Because we don't want visited_cell to be None
                 if Window.BUILD_ANIMATION:
-                    MazeDrawer.colorize_cell(
-                        visited_cells_between_wall[0], imposed_color=vc.Color.BLUE
-                    )
+
+                    for cell in random_wall.get_cells():
+                        visited_cells.append(cell)
+
+                    tmp = visited_cells.copy()
+
+                    for cell in tmp:
+                        if cell.number_of_uses > 1:
+                            visited_cells.remove(cell)
+
+                    MazeDrawer.colorize_all_cells(visited_cells)
                     MazeDrawer.refresh_drawing_on_screen(
                         maze
                     )  # Needs to be here to refresh the drawing on screen each time
@@ -141,20 +177,41 @@ class MazeGenerator:
 
     @staticmethod
     def aldous_broder(maze: m.Maze) -> None:
+
+        # For colorizing
+        visited_cells = []
+
         current_cell = random.choice(maze.get_all_cells())
         current_cell.set_visited(True)
 
         while maze.has_unvisited_cells():
-            random_neighbor = random.choice(current_cell.get_neighbors())
-            if not random_neighbor.is_visited:
-                current_cell.open_wall_with(random_neighbor)
-                random_neighbor.set_visited(True)
-            current_cell = random_neighbor
+
             if Window.BUILD_ANIMATION:
-                MazeDrawer.colorize_cell(current_cell, imposed_color=vc.Color.BLUE)
+                visited_cells.append(current_cell)
+
+                tmp = visited_cells.copy()
+
+                for cell in tmp:
+                    if cell.number_of_uses > 1:
+                        visited_cells.remove(cell)
+
+                MazeDrawer.colorize_all_cells(visited_cells)
+                MazeDrawer.colorize_cell(
+                    current_cell, imposed_color=vc.Color.BLUE, priority=1
+                )
                 MazeDrawer.refresh_drawing_on_screen(
                     maze
                 )  # Needs to be here to refresh the drawing on screen each time
+
+            random_neighbor = random.choice(current_cell.get_neighbors())
+
+            if not random_neighbor.is_visited:
+                current_cell.open_wall_with(random_neighbor)
+                random_neighbor.set_visited(True)
+            else:
+                current_cell.used_but_not_visited()
+
+            current_cell = random_neighbor
 
 
 class MazeSolver:
@@ -184,21 +241,7 @@ class MazeSolver:
         Args:
             maze (Maze): An untouched maze object to be built upon
         """
-        maze.cells[0][0].set_visited(True)
-        queue = [maze.cells[0][0]]
-        while len(queue) != 0:
-            current_cell = queue.pop(0)
-
-            if current_cell.has_unvisited_neighbors():
-                queue.append(current_cell)
-                chosen_cell = random.choice(current_cell.get_unvisited_neighbors())
-                current_cell.open_wall_with(chosen_cell)
-                chosen_cell.set_visited(True)
-                queue.append(chosen_cell)
-
-            if Window.SOLVE_ANIMATION:
-                MazeDrawer.colorize_cell(current_cell)
-                MazeDrawer.refresh_drawing_on_screen(maze)
+        pass
 
 
 class Window:
@@ -272,18 +315,58 @@ class MazeDrawer(Window):
         pygame.draw.line(Window.SCREEN, vc.Color.BLACK, start_coords, end_coords)
 
     @staticmethod
-    def colorize_cell(cell: m.Cell, imposed_color: vc.Color = None) -> None:
+    def colorize_all_cells(
+        cells: list[m.Cell], imposed_color: vc.Color = None, priority: int = 0
+    ) -> None:
+        for cell in cells:
+            MazeDrawer.colorize_cell(cell, imposed_color, priority)
+
+    @staticmethod
+    def colorize_cell(
+        cell: m.Cell, imposed_color: vc.Color = None, priority: int = 0
+    ) -> None:
         """Colorizes the cell according to its state"""
+        spacement = 1
 
         if imposed_color is not None:
             pygame.draw.rect(
-                Window.SCREEN, imposed_color, (cell.x, cell.y, cell.length, cell.length)
+                Window.SCREEN,
+                imposed_color,
+                (
+                    cell.x + spacement,
+                    cell.y + spacement,
+                    cell.length - spacement,
+                    cell.length - spacement,
+                ),
             )
-        elif cell.is_visited and not cell.is_start and not cell.is_end:
-            pygame.draw.rect(
-                Window.SCREEN, vc.Color.BLUE, (cell.x, cell.y, cell.length, cell.length)
-            )
-        elif cell.is_start:
+
+        if imposed_color is None or priority <= 0:
+            if cell.is_visited and not cell.is_start and not cell.is_end:
+                if cell.number_of_uses == 1:
+                    pygame.draw.rect(
+                        Window.SCREEN,
+                        vc.Color.YELLOW,
+                        (
+                            cell.x + spacement,
+                            cell.y + spacement,
+                            cell.length - spacement,
+                            cell.length - spacement,
+                        ),
+                    )
+                # Will be used as a trick to colorize the cell again after passing on it again
+                else:
+                    pygame.draw.rect(
+                        Window.SCREEN,
+                        vc.Color.WHITE,
+                        (
+                            cell.x + spacement,
+                            cell.y + spacement,
+                            cell.length - spacement,
+                            cell.length - spacement,
+                        ),
+                    )
+
+        if cell.is_start:
             pygame.draw.rect(
                 Window.SCREEN, vc.Color.RED, (cell.x, cell.y, cell.length, cell.length)
             )
@@ -293,20 +376,14 @@ class MazeDrawer(Window):
                 vc.Color.GREEN,
                 (cell.x, cell.y, cell.length, cell.length),
             )
-        else:
-            pygame.draw.rect(
-                Window.SCREEN,
-                vc.Color.WHITE,
-                (cell.x, cell.y, cell.length, cell.length),
-            )
 
     @staticmethod
     def draw_start_and_end_cells(maze) -> None:
         """Draws the start and end cells of the maze"""
-        for row in maze.cells:
-            for cell in row:
-                if cell.is_start or cell.is_end:
-                    MazeDrawer.colorize_cell(cell)
+        cells = maze.get_all_cells()
+        for cell in cells:
+            if cell.is_start or cell.is_end:
+                MazeDrawer.colorize_cell(cell)
 
     @staticmethod
     def draw_maze(maze: m.Maze) -> None:
