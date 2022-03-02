@@ -1,3 +1,37 @@
+class Wall:
+    def __init__(self):
+
+        self.is_opened = False
+
+        # Each wall separates a cell from another, except borders
+        self.cell1 = None
+        self.cell2 = None
+        
+    def is_border(self):
+        """Checks if the wall is a border
+
+        Returns:
+            bool: True if the wall is a border, False otherwise
+        """
+        return self.cell1 is None and self.cell2 is None
+
+    def open(self) -> None:
+        """Opens the wall"""
+        self.is_opened = True
+
+    def close(self) -> None:
+        """Closes the wall"""
+        self.is_opened = False
+        
+    def get_cells(self) -> list["Cell"]:
+        """Get all cells of the wall (both cells actually)
+
+        Returns:
+            list[Cell]: List of cells
+        """
+        return [self.cell1, self.cell2]
+
+
 class Cell:
     NUMBER_OF_CELLS = 0
 
@@ -14,19 +48,95 @@ class Cell:
         self.bottom_cell = None
         self.left_cell = None
         self.right_cell = None
-        self.top_wall = True
-        self.bottom_wall = True
-        self.left_wall = True
-        self.right_wall = True
+        self.top_wall = Wall()
+        self.bottom_wall = Wall()
+        self.left_wall = Wall()
+        self.right_wall = Wall()
 
-        self.visited = False
+        self.is_visited = False
         self.is_start = False
         self.is_end = False
+
+    def __str__(self):
+        return f"{self.id}"
 
     def __eq__(self, cell: "Cell"):
         if isinstance(cell, self.__class__):
             return self.id == cell.id
         return False
+    
+    def reset_state(self):
+        self.is_visited = False
+    
+    def get_walls(self) -> list[Wall]:
+        l = [self.top_wall, self.bottom_wall, self.left_wall, self.right_wall]
+        
+        return list(filter(lambda m: not m.is_border(), l))
+    
+    def get_opened_walls(self) -> list[Wall]:
+        l = []
+        if self.top_wall.is_opened:
+            l.append(self.top_wall)
+        if self.bottom_wall.is_opened:
+            l.append(self.bottom_wall)
+        if self.left_wall.is_opened:
+            l.append(self.left_wall)
+        if self.right_wall.is_opened:
+            l.append(self.right_wall)
+            
+        return list(filter(lambda m: not m.is_border(), l))
+    
+    def get_closed_walls(self) -> list[Wall]:
+        l = []
+        if not self.top_wall.is_opened:
+            l.append(self.top_wall)
+        if not self.bottom_wall.is_opened:
+            l.append(self.bottom_wall)
+        if not self.left_wall.is_opened:
+            l.append(self.left_wall)
+        if not self.right_wall.is_opened:
+            l.append(self.right_wall)
+            
+        return list(filter(lambda m: not m.is_border(), l))
+
+    def is_edge_and_not_corner(self) -> bool:
+        return self.is_edge() and not self.is_corner()
+
+    def is_edge(self) -> bool:
+        return (
+            self.top_cell is None
+            or self.bottom_cell is None
+            or self.left_cell is None
+            or self.right_cell is None
+        )
+
+    def is_corner(self) -> bool:
+        return (
+            (
+                self.top_cell is None
+                and self.bottom_cell is not None
+                and self.left_cell is None
+                and self.right_cell is not None
+            )
+            or (
+                self.top_cell is None
+                and self.bottom_cell is not None
+                and self.left_cell is not None
+                and self.right_cell is None
+            )
+            or (
+                self.top_cell is not None
+                and self.bottom_cell is None
+                and self.left_cell is None
+                and self.right_cell is not None
+            )
+            or (
+                self.top_cell is not None
+                and self.bottom_cell is None
+                and self.left_cell is not None
+                and self.right_cell is None
+            )
+        )
 
     def set_visited(self, visited: bool) -> None:
         """Sets the visited status of the cell
@@ -34,7 +144,37 @@ class Cell:
         Args:
             visited (bool): The visited status to set
         """
-        self.visited = visited
+        self.is_visited = visited
+
+    def get_neighbors(self) -> list["Cell"]:
+        l = []
+        if self.top_cell is not None:
+            l.append(self.top_cell)
+        if self.bottom_cell is not None:
+            l.append(self.bottom_cell)
+        if self.left_cell is not None:
+            l.append(self.left_cell)
+        if self.right_cell is not None:
+            l.append(self.right_cell)
+            
+        return l
+
+    def get_neighbors_according_to_walls(self) -> list["Cell"]:
+        """Get all neighbors of the cell according to the walls
+
+        Returns:
+            list[Cell]: List of neighbors according to the walls
+        """
+        l = []
+        if self.top_wall.is_opened:
+            l.append(self.top_cell)
+        if self.bottom_wall.is_opened:
+            l.append(self.bottom_cell)
+        if self.left_wall.is_opened:
+            l.append(self.left_cell)
+        if self.right_wall.is_opened:
+            l.append(self.right_cell)
+        return l
 
     def has_unvisited_neighbors(self) -> bool:
         """Check if all neighbors are visited or not
@@ -44,13 +184,13 @@ class Cell:
         """
         return (
             self.top_cell is not None
-            and not self.top_cell.visited
+            and not self.top_cell.is_visited
             or self.bottom_cell is not None
-            and not self.bottom_cell.visited
+            and not self.bottom_cell.is_visited
             or self.left_cell is not None
-            and not self.left_cell.visited
+            and not self.left_cell.is_visited
             or self.right_cell is not None
-            and not self.right_cell.visited
+            and not self.right_cell.is_visited
         )
 
     def get_unvisited_neighbors(self) -> list["Cell"]:
@@ -60,13 +200,13 @@ class Cell:
             list["Cell"]: List of unvisited neighbors (cells)
         """
         neighbors = []
-        if self.top_cell is not None and not self.top_cell.visited:
+        if self.top_cell is not None and not self.top_cell.is_visited:
             neighbors.append(self.top_cell)
-        if self.bottom_cell is not None and not self.bottom_cell.visited:
+        if self.bottom_cell is not None and not self.bottom_cell.is_visited:
             neighbors.append(self.bottom_cell)
-        if self.left_cell is not None and not self.left_cell.visited:
+        if self.left_cell is not None and not self.left_cell.is_visited:
             neighbors.append(self.left_cell)
-        if self.right_cell is not None and not self.right_cell.visited:
+        if self.right_cell is not None and not self.right_cell.is_visited:
             neighbors.append(self.right_cell)
         return neighbors
 
@@ -77,17 +217,17 @@ class Cell:
             cell (Cell): The cell to open the wall with
         """
         if self.top_cell is cell:
-            self.top_wall = False
-            cell.bottom_wall = False
+            self.top_wall.open()
+            cell.bottom_wall.open()
         elif self.bottom_cell is cell:
-            self.bottom_wall = False
-            cell.top_wall = False
+            self.bottom_wall.open()
+            cell.top_wall.open()
         elif self.left_cell is cell:
-            self.left_wall = False
-            cell.right_wall = False
+            self.left_wall.open()
+            cell.right_wall.open()
         elif self.right_cell is cell:
-            self.right_wall = False
-            cell.left_wall = False
+            self.right_wall.open()
+            cell.left_wall.open()
 
     def get_direction(self, cell: "Cell") -> str:
         """Gets the direction to the given cell from this cell
@@ -109,14 +249,6 @@ class Cell:
         else:
             return ""
 
-    def __str__(self):
-        tmp = ""
-        tmp += "1" if self.top_wall else "0"
-        tmp += "1" if self.bottom_wall else "0"
-        tmp += "1" if self.left_wall else "0"
-        tmp += "1" if self.right_wall else "0"
-        return f" {tmp} "
-
 
 class Maze:
     def __init__(self, width: int, height: int):
@@ -127,6 +259,7 @@ class Maze:
         self.cells[0][0].is_start = True
         self.cells[-1][-1].is_end = True
         self.link_cells()
+        self.link_walls()
 
         self.is_built = False
         self.is_solved = False
@@ -140,7 +273,7 @@ class Maze:
         return s
 
     def link_cells(self) -> None:
-        """Links all cells recursively"""
+        """Links all cells"""
         for i in range(self.height):
             for j in range(self.width):
                 cell = self.cells[i][j]
@@ -152,3 +285,76 @@ class Maze:
                     cell.left_cell = self.cells[i][j - 1]
                 if j < self.width - 1:
                     cell.right_cell = self.cells[i][j + 1]
+                    
+    def reset_cells_state(self):
+        """Resets the state of all cells"""
+        for i in range(self.height):
+            for j in range(self.width):
+                self.cells[i][j].reset_state()
+
+    def get_all_cells(self) -> list[Cell]:
+        """Gets all cells
+
+        Returns:
+            list[Cell]: List of all cells
+        """
+        return [cell for row in self.cells for cell in row]
+
+    def get_all_walls(self) -> list[Wall]:
+        """Gets all walls of the maze
+
+        Returns:
+            list[Wall]: List of all walls
+        """
+        walls = []
+        for i in range(self.height):
+            for j in range(self.width):
+                walls.append(self.cells[i][j].top_wall)
+                walls.append(self.cells[i][j].bottom_wall)
+                walls.append(self.cells[i][j].left_wall)
+                walls.append(self.cells[i][j].right_wall)
+
+        walls = list(
+            filter(lambda k: walls.count(k) != 1, walls)
+        )  # To remove the borders, because each border is in contact with one single cell
+
+        # Now we remove occurrences of walls that are in contact with more than one cell (every wall is in contact with two cells or more lol)
+        walls_without_duplicates = []
+        for wall in walls:
+            if wall not in walls_without_duplicates:
+                walls_without_duplicates.append(wall)
+
+        return list(filter(lambda m: not m.is_border(), walls_without_duplicates))
+
+    def link_walls(self) -> None:
+        """Links all walls"""
+        for i in range(self.height):
+            for j in range(self.width):
+                cell = self.cells[i][j]
+                if i > 0:
+                    # Link the bottom wall of the cell above to the cell
+                    cell.top_cell.bottom_wall.cell1 = cell
+                    cell.top_cell.bottom_wall.cell2 = self.cells[i - 1][j]
+                    cell.top_cell.bottom_wall = cell.top_wall
+                if i < self.height - 1:
+                    # Link the top wall of the cell above to the cell
+                    cell.bottom_cell.top_wall.cell1 = cell
+                    cell.bottom_cell.top_wall.cell2 = self.cells[i + 1][j]
+                    cell.bottom_cell.top_wall = cell.bottom_wall
+                if j > 0:
+                    # Link the right wall of the cell above to the cell
+                    cell.left_cell.right_wall.cell1 = cell
+                    cell.left_cell.right_wall.cell2 = self.cells[i][j - 1]
+                    cell.left_cell.right_wall = cell.left_wall
+                if j < self.width - 1:
+                    cell.right_cell.left_wall.cell1 = cell
+                    cell.right_cell.left_wall.cell2 = self.cells[i][j + 1]
+                    # Link the left wall of the cell above to the cell
+                    cell.right_cell.left_wall = cell.right_wall
+                    
+    def has_unvisited_cells(self) -> bool:
+        for row in self.cells:
+            for cell in row:
+                if not cell.is_visited:
+                    return True
+        return False

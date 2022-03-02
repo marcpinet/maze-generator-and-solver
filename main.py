@@ -5,6 +5,17 @@ import visual.colors as vc
 from abc import abstractmethod
 
 
+def ask_for_int(sentence: str) -> int:
+    """
+    Ask the user for an integer.
+    """
+    while True:
+        try:
+            return int(input(sentence))
+        except ValueError:
+            print("Invalid input. Please try again.")
+
+
 def main():
 
     # Intializing variables
@@ -25,7 +36,7 @@ def main():
     print()
 
     while alg_gen not in range(len(mt.MazeBuilder.ALGORITHMS)):
-        alg_gen = int(input("Input the n° of the algorithm for the generation: "))
+        alg_gen = ask_for_int("Input the n° of the algorithm for the generation: ")
 
     print()
 
@@ -37,15 +48,15 @@ def main():
     print()
 
     while alg_sol not in range(len(mt.MazeSolver.ALGORITHMS)):
-        alg_sol = int(input("Input the n° of the algorithm for the solving: "))
+        alg_sol = ask_for_int("Input the n° of the algorithm for the solving: ")
 
     print()
 
     while width not in range(1000):
-        width = int(input("Width of the maze: "))
+        width = ask_for_int("Width of the maze: ")
 
     while height not in range(1000):
-        height = int(input("Height of the maze: "))
+        height = ask_for_int("Height of the maze: ")
 
     print()
 
