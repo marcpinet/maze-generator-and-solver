@@ -10,6 +10,34 @@ import maze.maze as m
 import visual.colors as vc
 
 
+class SetTool:
+    @staticmethod
+    def belong_to_distinct_sets(
+        sets: list[m.Cell], cell1: m.Cell, cell2: m.Cell
+    ) -> bool:
+        for set_ in sets:
+            if cell1 in set_ and cell2 in set_:
+                return False
+        return True
+
+    @staticmethod
+    def join_sets(sets: list[m.Cell], cell1: m.Cell, cell2: m.Cell) -> None:
+        s = 0
+
+        for i in range(0, len(sets)):
+            if cell1 in sets[i]:
+                s = i
+                sets[i].append(cell2)
+                break
+        for i in range(0, len(sets)):
+            if cell2 in sets[i] and cell1 not in sets[i]:
+                # Merging the rest
+                for j in range(0, len(sets[i])):
+                    if sets[i][j].id != cell2.id:
+                        sets[s].append(sets[i][j])
+                del sets[i]
+                break
+
 class MazeGenerator:
     ALGORITHMS = []
 
@@ -21,12 +49,12 @@ class MazeGenerator:
             for method_name, method in zip(dir(self), dir(self))
             if callable(getattr(self, method_name))
             and not method_name.startswith("__")
-            and method_name.lower() != "build"
+            and method_name.lower() != "generate"
         }
 
         self.algorithm = list(MazeGenerator.ALGORITHMS.values())[num]
 
-    def build(self, maze: m.Maze) -> None:
+    def generate(self, maze: m.Maze) -> None:
         self.algorithm(maze)
         maze.is_generated = True
         maze.reset_cells_state()
@@ -58,7 +86,7 @@ class MazeGenerator:
             else:
                 current_cell.used_but_not_visited()
 
-            if Window.BUILD_ANIMATION:
+            if Window.GENERATE_ANIMATION:
                 MazeDrawer.colorize_all_cells(
                     [c for c in maze.get_all_cells() if c is not chosen_cell]
                 )
@@ -72,31 +100,6 @@ class MazeGenerator:
 
     @staticmethod
     def randomized_kruskal(maze: m.Maze) -> None:
-        def __belong_to_distinct_sets(
-            sets: list[m.Cell], cell1: m.Cell, cell2: m.Cell
-        ) -> bool:
-            for set_ in sets:
-                if cell1 in set_ and cell2 in set_:
-                    return False
-            return True
-
-        def __join_sets(sets: list[m.Cell], cell1: m.Cell, cell2: m.Cell) -> None:
-            s = 0
-
-            for i in range(0, len(sets)):
-                if cell1 in sets[i]:
-                    s = i
-                    sets[i].append(cell2)
-                    break
-            for i in range(0, len(sets)):
-                if cell2 in sets[i] and cell1 not in sets[i]:
-                    # Merging the rest
-                    for j in range(0, len(sets[i])):
-                        if sets[i][j].id != cell2.id:
-                            sets[s].append(sets[i][j])
-                    del sets[i]
-                    break
-
         # Only for coloring
         visited_cells = []
 
@@ -106,11 +109,11 @@ class MazeGenerator:
         random.shuffle(walls)
         while len(walls) > 0:
             current_wall = walls.pop()
-            if __belong_to_distinct_sets(sets, current_wall.cell1, current_wall.cell2):
+            if SetTool.belong_to_distinct_sets(sets, current_wall.cell1, current_wall.cell2):
                 current_wall.open()
-                __join_sets(sets, current_wall.cell1, current_wall.cell2)
+                SetTool.join_sets(sets, current_wall.cell1, current_wall.cell2)
 
-            if Window.BUILD_ANIMATION:
+            if Window.GENERATE_ANIMATION:
 
                 visited_cells.append(current_wall.cell1)
                 visited_cells.append(current_wall.cell2)
@@ -157,7 +160,7 @@ class MazeGenerator:
                 wall_list += random_wall.cell2.get_closed_walls()
 
                 # Because we don't want visited_cell to be None
-                if Window.BUILD_ANIMATION:
+                if Window.GENERATE_ANIMATION:
 
                     for cell in random_wall.get_cells():
                         visited_cells.append(cell)
@@ -186,7 +189,7 @@ class MazeGenerator:
 
         while maze.has_unvisited_cells():
 
-            if Window.BUILD_ANIMATION:
+            if Window.GENERATE_ANIMATION:
                 visited_cells.append(current_cell)
 
                 tmp = visited_cells.copy()
@@ -212,6 +215,76 @@ class MazeGenerator:
                 current_cell.used_but_not_visited()
 
             current_cell = random_neighbor
+            
+    @staticmethod
+    def eller(maze: m.Maze) -> None:
+    
+        row_number = 0
+        
+        while row_number < maze.height - 1:
+            row = [[cell] for cell in maze.cells[row_number]]
+            sets = []
+            
+            # Randomly joining cells in distinct sets
+            i = 0
+            sets.append(row[0])
+            row.remove(row[0])
+            for set_ in row:
+                if random.getrandbits(1):
+                    sets[i].extend(set_)
+                else:
+                    sets.append(set_)
+                    i += 1
+                
+                
+            for i in range(0, len(sets)):
+                
+                # Determining vertical connections and appending newly connected cell to the corresponding sets
+                random_vertical_connection = random.randint(0, len(sets[i]) - 1)
+                chosen_cell = sets[i][random_vertical_connection]
+                chosen_cell.open_wall_with(chosen_cell.bottom_cell)
+                sets[i].append(chosen_cell.bottom_cell)
+                
+                for j in range(0, len(sets[i])):
+                    sets[i][j].set_visited(True)
+                    
+                    # Opening the walls between adjacent cells in same set
+                    if len(sets[i]) > 1:
+                        if j < len(sets[i]) - 1:
+                            sets[i][j].open_wall_with(sets[i][j + 1])
+                        
+                    if Window.GENERATE_ANIMATION:
+                        MazeDrawer.colorize_all_cells([cell for cell in maze.cells[row_number] if cell.is_visited])
+                        MazeDrawer.colorize_cell(
+                            sets[i][0], imposed_color=vc.Color.BLUE, priority=1
+                        )
+                        MazeDrawer.refresh_drawing_on_screen(
+                            maze
+                        )
+            
+            row_number += 1
+                        
+        # Handling last row
+        sets = [cell for cell in maze.cells[-1]]
+        
+        # Joining ALL adjacent sets of cells
+        i = 0
+                
+        for i in range(0, maze.width):
+            sets[i].set_visited(True)
+            
+            # Opening the walls between adjacent cells in same set
+            if i < maze.width - 1:
+                sets[i].open_wall_with(sets[i+1])
+                
+            if Window.GENERATE_ANIMATION:
+                MazeDrawer.colorize_all_cells([cell for cell in maze.cells[-1] if cell.is_visited])
+                MazeDrawer.colorize_cell(
+                    sets[i], imposed_color=vc.Color.BLUE, priority=1
+                )
+                MazeDrawer.refresh_drawing_on_screen(
+                    maze
+                )
 
 
 class MazeSolver:
@@ -251,14 +324,14 @@ class Window:
     SCREEN = None
     RUNNING = False
     CLOCK = None
-    BUILD_ANIMATION = True
+    GENERATE_ANIMATION = True
     SOLVE_ANIMATION = True
 
     def __init__(self):
         pygame.init()
         Window.SCREEN = pygame.display.set_mode((Window.WIDTH, Window.HEIGHT))
         Window.SCREEN.fill(vc.Color.WHITE)
-        pygame.display.set_caption("MazeBuild&Solve")
+        pygame.display.set_caption("MazeGen&Solve")
         Window.RUNNING = False
         Window.CLOCK = pygame.time.Clock()
 
@@ -441,11 +514,13 @@ class MazeDrawer(Window):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     if not self.maze.is_generated:
-                        print("Building...")
-                        self.maze_generator.build(self.maze)
+                        print("\nGenerating...")
+                        self.maze_generator.generate(self.maze)
+                        print(vc.CMDColors.GREEN + "Generated!" + vc.CMDColors.RESET)
                     elif not self.maze.is_solved:
-                        print("Solving...")
+                        print("\nSolving...")
                         self.maze_solver.solve(self.maze)
+                        print(vc.CMDColors.GREEN + "Solved!" + vc.CMDColors.RESET)
 
     def start(self) -> None:
         Window.RUNNING = True
