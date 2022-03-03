@@ -67,6 +67,22 @@ class Cell:
         if isinstance(cell, self.__class__):
             return self.id == cell.id
         return False
+    
+    def get_visited_neighbors(self) -> list["Cell"]:
+        """Get all neighbors of the cell that are visited
+
+        Returns:
+            list[Cell]: List of visited neighbors
+        """
+        return list(filter(lambda c: c.is_visited, self.get_neighbors()))
+    
+    def has_visited_neighbor(self) -> bool:
+        """Check if any neighbors are visited or not
+
+        Returns:
+            bool: True if there is at least one, else False
+        """
+        return len(self.get_visited_neighbors()) > 0
 
     def reset_state(self):
         self.is_visited = False
@@ -188,22 +204,13 @@ class Cell:
             l.append(self.right_cell)
         return l
 
-    def has_unvisited_neighbors(self) -> bool:
-        """Check if all neighbors are visited or not
+    def has_unvisited_neighbor(self) -> bool:
+        """Check if any neighbors are visited or not
 
         Returns:
             bool: True if there is at least one, else False
         """
-        return (
-            self.top_cell is not None
-            and not self.top_cell.is_visited
-            or self.bottom_cell is not None
-            and not self.bottom_cell.is_visited
-            or self.left_cell is not None
-            and not self.left_cell.is_visited
-            or self.right_cell is not None
-            and not self.right_cell.is_visited
-        )
+        return len(self.get_unvisited_neighbors()) > 0
 
     def get_unvisited_neighbors(self) -> list["Cell"]:
         """Get all univisited neighbors of the cell (top, bottom, left and right)
@@ -304,7 +311,7 @@ class Maze:
             for j in range(self.width):
                 self.cells[i][j].reset_state()
 
-    def get_all_cells(self) -> list[Cell]:
+    def get_cells(self) -> list[Cell]:
         """Gets all cells
 
         Returns:
@@ -312,7 +319,7 @@ class Maze:
         """
         return [cell for row in self.cells for cell in row]
 
-    def get_all_walls(self) -> list[Wall]:
+    def get_walls(self) -> list[Wall]:
         """Gets all walls of the maze
 
         Returns:
@@ -365,8 +372,15 @@ class Maze:
                     cell.right_cell.left_wall = cell.right_wall
 
     def has_unvisited_cells(self) -> bool:
-        cells = self.get_all_cells()
+        cells = self.get_cells()
         for cell in cells:
             if not cell.is_visited:
                 return True
         return False
+    
+    def get_flat_coords(self, cell: Cell) -> list[int]:
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.cells[i][j] is cell:
+                    return [i, j]
+        return [-1, -1]
