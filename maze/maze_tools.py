@@ -38,6 +38,7 @@ class SetTool:
                 del sets[i]
                 break
 
+
 class MazeGenerator:
     ALGORITHMS = []
 
@@ -68,15 +69,13 @@ class MazeGenerator:
         """
         maze.cells[0][0].set_visited(True)
         stack = [maze.cells[0][0]]
-
-        # For coloring
-        old_cell = None
+        chosen_cell = None
 
         while len(stack) != 0:
 
             current_cell = stack.pop()
 
-            if current_cell.has_unvisited_neighbors():
+            if current_cell.has_unvisited_neighbor():
                 stack.append(current_cell)
                 chosen_cell = random.choice(current_cell.get_unvisited_neighbors())
                 current_cell.open_wall_with(chosen_cell)
@@ -88,12 +87,11 @@ class MazeGenerator:
 
             if Window.GENERATE_ANIMATION:
                 MazeDrawer.colorize_all_cells(
-                    [c for c in maze.get_all_cells() if c is not chosen_cell]
+                    [c for c in maze.get_cells() if c is not chosen_cell]
                 )
                 MazeDrawer.colorize_cell(
                     current_cell, imposed_color=vc.Color.BLUE, priority=1
                 )
-                old_cell = chosen_cell
                 MazeDrawer.refresh_drawing_on_screen(
                     maze
                 )  # Needs to be here to refresh the drawing on screen each time
@@ -103,13 +101,15 @@ class MazeGenerator:
         # Only for coloring
         visited_cells = []
 
-        sets = [[cell] for cell in maze.get_all_cells()]
-        walls = maze.get_all_walls()
+        sets = [[cell] for cell in maze.get_cells()]
+        walls = maze.get_walls()
 
         random.shuffle(walls)
         while len(walls) > 0:
             current_wall = walls.pop()
-            if SetTool.belong_to_distinct_sets(sets, current_wall.cell1, current_wall.cell2):
+            if SetTool.belong_to_distinct_sets(
+                sets, current_wall.cell1, current_wall.cell2
+            ):
                 current_wall.open()
                 SetTool.join_sets(sets, current_wall.cell1, current_wall.cell2)
 
@@ -134,7 +134,7 @@ class MazeGenerator:
         # For colorizing
         visited_cells = []
 
-        random_cell = random.choice(maze.get_all_cells())
+        random_cell = random.choice(maze.get_cells())
         random_cell.set_visited(True)
         wall_list = []
         wall_list += (
@@ -184,7 +184,7 @@ class MazeGenerator:
         # For colorizing
         visited_cells = []
 
-        current_cell = random.choice(maze.get_all_cells())
+        current_cell = random.choice(maze.get_cells())
         current_cell.set_visited(True)
 
         while maze.has_unvisited_cells():
@@ -215,16 +215,16 @@ class MazeGenerator:
                 current_cell.used_but_not_visited()
 
             current_cell = random_neighbor
-            
+
     @staticmethod
     def eller(maze: m.Maze) -> None:
-    
+
         row_number = 0
-        
+
         while row_number < maze.height - 1:
             row = [[cell] for cell in maze.cells[row_number]]
             sets = []
-            
+
             # Randomly joining cells in distinct sets
             i = 0
             sets.append(row[0])
@@ -235,56 +235,125 @@ class MazeGenerator:
                 else:
                     sets.append(set_)
                     i += 1
-                
-                
+
             for i in range(0, len(sets)):
-                
+
                 # Determining vertical connections and appending newly connected cell to the corresponding sets
                 random_vertical_connection = random.randint(0, len(sets[i]) - 1)
                 chosen_cell = sets[i][random_vertical_connection]
                 chosen_cell.open_wall_with(chosen_cell.bottom_cell)
                 sets[i].append(chosen_cell.bottom_cell)
-                
-                for j in range(0, len(sets[i])):
+
+                for j in range(0, len(sets[i]) - 1):
                     sets[i][j].set_visited(True)
-                    
+
                     # Opening the walls between adjacent cells in same set
                     if len(sets[i]) > 1:
-                        if j < len(sets[i]) - 1:
-                            sets[i][j].open_wall_with(sets[i][j + 1])
-                        
+                        sets[i][j].open_wall_with(sets[i][j + 1])
+
                     if Window.GENERATE_ANIMATION:
-                        MazeDrawer.colorize_all_cells([cell for cell in maze.cells[row_number] if cell.is_visited])
+                        MazeDrawer.colorize_all_cells(
+                            [cell for cell in maze.cells[row_number] if cell.is_visited]
+                        )
                         MazeDrawer.colorize_cell(
                             sets[i][0], imposed_color=vc.Color.BLUE, priority=1
                         )
-                        MazeDrawer.refresh_drawing_on_screen(
-                            maze
-                        )
-            
+                        MazeDrawer.refresh_drawing_on_screen(maze)
+
             row_number += 1
-                        
+
         # Handling last row
         sets = [cell for cell in maze.cells[-1]]
-        
+
         # Joining ALL adjacent sets of cells
         i = 0
-                
+
         for i in range(0, maze.width):
             sets[i].set_visited(True)
-            
+
             # Opening the walls between adjacent cells in same set
             if i < maze.width - 1:
-                sets[i].open_wall_with(sets[i+1])
-                
+                sets[i].open_wall_with(sets[i + 1])
+
             if Window.GENERATE_ANIMATION:
-                MazeDrawer.colorize_all_cells([cell for cell in maze.cells[-1] if cell.is_visited])
+                MazeDrawer.colorize_all_cells(
+                    [cell for cell in maze.cells[-1] if cell.is_visited]
+                )
                 MazeDrawer.colorize_cell(
                     sets[i], imposed_color=vc.Color.BLUE, priority=1
                 )
-                MazeDrawer.refresh_drawing_on_screen(
-                    maze
-                )
+                MazeDrawer.refresh_drawing_on_screen(maze)
+
+    @staticmethod
+    def hunt_and_kill(maze: m.Maze) -> None:
+        current_cell = maze.cells[0][0]
+
+        while maze.has_unvisited_cells():
+            current_cell.set_visited(True)
+
+            # Performing a random walk until no neighbor is found
+            while current_cell.has_unvisited_neighbor():
+                if not current_cell.is_visited:
+                    current_cell.set_visited(True)
+
+                random_neighbor = random.choice(current_cell.get_unvisited_neighbors())
+                current_cell.open_wall_with(random_neighbor)
+                current_cell = random_neighbor
+
+                if Window.GENERATE_ANIMATION:
+                    MazeDrawer.colorize_all_cells(
+                        [cell for cell in maze.get_cells() if cell.is_visited]
+                    )
+                    MazeDrawer.colorize_cell(
+                        current_cell, imposed_color=vc.Color.BLUE, priority=1
+                    )
+                    MazeDrawer.refresh_drawing_on_screen(maze)
+
+            # Scan the whole maze to look for an unvisited cell that is adjacent to a visited cell
+            for cell in maze.get_cells():
+                if not cell.is_visited:
+                    current_cell = cell
+                    current_cell.open_wall_with(
+                        random.choice(current_cell.get_visited_neighbors())
+                    )
+                    if Window.GENERATE_ANIMATION:
+                        MazeDrawer.colorize_all_cells(
+                            [c for c in maze.get_cells() if c.is_visited]
+                        )
+                        MazeDrawer.colorize_cell(
+                            current_cell, imposed_color=vc.Color.BLUE, priority=1
+                        )
+                        MazeDrawer.colorize_all_cells(
+                            [
+                                c
+                                for c in maze.cells[
+                                    maze.get_flat_coords(current_cell)[0]
+                                ]
+                                if maze.get_flat_coords(c)[1]
+                                <= maze.get_flat_coords(current_cell)[1]
+                            ],
+                            imposed_color=vc.Color.GREEN,
+                            priority=2,
+                        )
+                        MazeDrawer.refresh_drawing_on_screen(maze)
+
+                    break
+
+    @staticmethod
+    def binary_tree(maze: m.Maze) -> None:
+        for cell in maze.get_cells():
+            top_and_left_neighbors = [cell.top_cell, cell.left_cell]
+            top_and_left_neighbors = list(filter(lambda x: x is not None, top_and_left_neighbors))
+            
+            if len(top_and_left_neighbors) == 0:
+                continue
+            
+            toss_coin = random.randint(0, len(top_and_left_neighbors) - 1)
+            cell.open_wall_with(top_and_left_neighbors[toss_coin])
+
+            if Window.GENERATE_ANIMATION:
+                MazeDrawer.colorize_cell(cell, imposed_color=vc.Color.BLUE, priority=1)
+                MazeDrawer.refresh_drawing_on_screen(maze)
 
 
 class MazeSolver:
@@ -318,7 +387,7 @@ class MazeSolver:
 
 
 class Window:
-    FPS = 30
+    FPS = 60
     WIDTH = 800
     HEIGHT = 600
     SCREEN = None
@@ -453,7 +522,7 @@ class MazeDrawer(Window):
     @staticmethod
     def draw_start_and_end_cells(maze) -> None:
         """Draws the start and end cells of the maze"""
-        cells = maze.get_all_cells()
+        cells = maze.get_cells()
         for cell in cells:
             if cell.is_start or cell.is_end:
                 MazeDrawer.colorize_cell(cell)
