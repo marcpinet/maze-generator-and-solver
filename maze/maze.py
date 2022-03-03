@@ -154,15 +154,20 @@ class Cell:
         self.number_of_uses += 1
 
     def get_neighbors(self) -> list["Cell"]:
+        """Returns a list of neighbors (not None) of the cell. The order of the return has a an importance to some point in the Eller algorithm
+
+        Returns:
+            list[Cell]: List of neighbors
+        """
         l = []
-        if self.top_cell is not None:
-            l.append(self.top_cell)
-        if self.bottom_cell is not None:
-            l.append(self.bottom_cell)
         if self.left_cell is not None:
             l.append(self.left_cell)
         if self.right_cell is not None:
             l.append(self.right_cell)
+        if self.top_cell is not None:
+            l.append(self.top_cell)
+        if self.bottom_cell is not None:
+            l.append(self.bottom_cell)
 
         return l
 
