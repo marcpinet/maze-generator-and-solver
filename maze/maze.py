@@ -59,6 +59,13 @@ class Cell:
         self.is_colored = False
 
         self.number_of_uses = 0
+        
+    # Make cell hashable
+    def __hash__(self):
+        return hash(self.id)
+    
+    def __lt__(self, other):
+        return False
 
     def __str__(self):
         return f"{self.id}"
@@ -194,13 +201,13 @@ class Cell:
             list[Cell]: List of neighbors according to the walls
         """
         l = []
-        if self.top_wall.is_opened:
+        if self.top_cell is not None and self.top_wall.is_opened:
             l.append(self.top_cell)
-        if self.bottom_wall.is_opened:
+        if self.bottom_cell is not None and self.bottom_wall.is_opened:
             l.append(self.bottom_cell)
-        if self.left_wall.is_opened:
+        if self.left_cell is not None and self.left_wall.is_opened:
             l.append(self.left_cell)
-        if self.right_wall.is_opened:
+        if self.right_cell is not None and self.right_wall.is_opened:
             l.append(self.right_cell)
         return l
 
