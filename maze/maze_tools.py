@@ -407,22 +407,80 @@ class MazeSolver:
 
         self.algorithm = list(MazeSolver.ALGORITHMS.values())[num]
 
-    def solve(self, maze: m.Maze) -> None:
-        self.algorithm(maze)
+    def solve(self, maze: m.Maze) -> list[m.Cell]:
+        res = self.algorithm(maze)
         maze.is_solved = True
+        return res
 
     @staticmethod
-    def a_star(maze: m.Maze) -> None:
+    def a_star(maze: m.Maze) -> list[m.Cell]:
         """A* algorithm
 
         Args:
             maze (Maze): An untouched maze object to be built upon
         """
-        pass
+        def __reconstruct_path(cameFrom: dict, current: m.Cell) -> list[m.Cell]:
+            total_path = [current]
+            while current in cameFrom.keys():
+                current = cameFrom[current]
+                total_path.insert(0, current)
+            return total_path
+        
+        def __heuristic(c1: m.Cell, c2: m.Cell) -> int:
+            return abs(c1.x - c2.x) + abs(c1.y - c2.y)  # Manhattan distance
+        
+        def __alg(start: m.Cell, goal: m.Cell) -> list[m.Cell]:
+            closedSet = set()
+            openSet = {start}
+            cameFrom = {}
+            gScore = {start: 0}
+            fScore = {start: __heuristic(start, goal)}
+            
+            while len(openSet) > 0:
+                current = min(openSet, key=lambda x: fScore[x])
+                if current == goal:
+                    return __reconstruct_path(cameFrom, current)
+                
+                openSet.remove(current)
+                closedSet.add(current)
+                
+                for neighbor in current.get_neighbors_according_to_walls():
+                    if neighbor in closedSet:
+                        continue
+                    
+                    tentative_gScore = gScore[current] + 1
+                    if neighbor not in openSet:
+                        openSet.add(neighbor)
+                    elif tentative_gScore >= gScore[neighbor]:
+                        continue
+                    
+                    cameFrom[neighbor] = current
+                    gScore[neighbor] = tentative_gScore
+                    fScore[neighbor] = gScore[neighbor] + __heuristic(neighbor, goal)
+                    
+                    if Window.SOLVE_ANIMATION:
+                        MazeDrawer.colorize_cell(
+                            current, imposed_color=vc.Color.BLUE, priority=3
+                        )
+                        MazeDrawer.colorize_all_cells(
+                            list(closedSet),
+                            imposed_color=vc.Color.GREEN,
+                            priority=2,
+                        )
+                        MazeDrawer.colorize_all_cells(
+                            list(openSet),
+                            imposed_color=vc.Color.YELLOW,
+                            priority=2,
+                        )
+                        MazeDrawer.refresh_drawing_on_screen(maze)
+                    
+            return []
+        
+        return __alg(maze.cells[0][0], maze.cells[-1][-1])
 
 
 class Window:
-    FPS = 60
+    FPS = 30
     WIDTH = 800
     HEIGHT = 600
     SCREEN = None
@@ -471,6 +529,8 @@ class MazeDrawer(Window):
         MazeDrawer.CELL_SIZE = (
             Window.HEIGHT - 100
         ) / maze.height  # Width and height of the cell
+        
+        self.final_res = []
 
         pygame.display.set_caption(
             f"Gen: {list(MazeGenerator.ALGORITHMS.keys())[self.maze_generator.num]} - Solve: {list(MazeSolver.ALGORITHMS.keys())[self.maze_solver.num]}"
@@ -488,8 +548,8 @@ class MazeDrawer(Window):
         MazeDrawer.draw_maze(maze)
 
     @staticmethod
-    def _draw_line(start_coords: tuple, end_coords: tuple) -> None:
-        pygame.draw.line(Window.SCREEN, vc.Color.BLACK, start_coords, end_coords)
+    def _draw_line(start_coords: tuple, end_coords: tuple, color: vc.Color = vc.Color.BLACK) -> None:
+        pygame.draw.line(Window.SCREEN, color, start_coords, end_coords)
 
     @staticmethod
     def colorize_all_cells(
@@ -623,7 +683,7 @@ class MazeDrawer(Window):
                         print(vc.CMDColors.GREEN + "Generated!" + vc.CMDColors.RESET)
                     elif not self.maze.is_solved:
                         print("\nSolving...")
-                        self.maze_solver.solve(self.maze)
+                        self.final_res = self.maze_solver.solve(self.maze)
                         print(vc.CMDColors.GREEN + "Solved!" + vc.CMDColors.RESET)
 
     def start(self) -> None:
@@ -633,5 +693,9 @@ class MazeDrawer(Window):
             MazeDrawer.draw_maze(self.maze)
 
             self.handle_events()
+            
+            if self.maze.is_solved:
+                Window.SOLVE_ANIMATION = False
+                MazeDrawer.colorize_all_cells(self.final_res, imposed_color=vc.Color.YELLOW)
 
             MazeDrawer.refresh_drawing_on_screen(self.maze)
