@@ -266,13 +266,11 @@ class MazeGenerator:
         sets = [cell for cell in maze.cells[-1]]
 
         # Joining ALL adjacent sets of cells
-        i = 0
-
-        for i in range(0, maze.width):
+        for i in range(0, maze.width - 1):
             sets[i].set_visited(True)
 
             # Opening the walls between adjacent cells in same set
-            if i < maze.width - 1:
+            if i < maze.width:
                 sets[i].open_wall_with(sets[i + 1])
 
             if Window.GENERATE_ANIMATION:
@@ -354,7 +352,44 @@ class MazeGenerator:
             if Window.GENERATE_ANIMATION:
                 MazeDrawer.colorize_cell(cell, imposed_color=vc.Color.BLUE, priority=1)
                 MazeDrawer.refresh_drawing_on_screen(maze)
-
+                
+    @staticmethod
+    def sidewinder(maze: m.Maze) -> None:
+        run_set = []
+        
+        for cell in maze.get_cells():
+            
+            # First row case
+            if cell.top_cell is None and cell.right_cell is not None:
+                cell.open_wall_with(cell.right_cell)
+                continue
+            elif cell.top_cell is None and cell.right_cell is None:
+                continue
+            
+            # First case of each row
+            if cell.left_cell is None:
+                run_set = [cell]
+                
+            # Other cells of each row
+            if random.getrandbits(1):
+                if cell.right_cell is not None:
+                    cell.open_wall_with(cell.right_cell)
+                    run_set.append(cell.right_cell)
+                else:
+                    chosen_cell = random.choice(run_set)
+                    chosen_cell.open_wall_with(chosen_cell.top_cell)
+            else:
+                chosen_cell = random.choice(run_set)
+                chosen_cell.open_wall_with(chosen_cell.top_cell)
+                last_cell = run_set[-1].right_cell
+                run_set = [last_cell]
+                
+            # Visual
+            if Window.GENERATE_ANIMATION:
+                MazeDrawer.colorize_cell(cell, imposed_color=vc.Color.BLUE, priority=1)
+                MazeDrawer.refresh_drawing_on_screen(maze)
+            
+                    
 
 class MazeSolver:
     ALGORITHMS = []
