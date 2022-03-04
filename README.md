@@ -2,11 +2,19 @@
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![Windows](https://svgshare.com/i/ZhY.svg)](https://svgshare.com/i/ZhY.svg) [![Ask Me Anything !](https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg)](https://GitHub.com/Naereen/ama)
 
-A simple maze generator and solver written in Python with Pygame. You can visualize many algorithms and see how they work.
+A simple maze generator and solver written in Python with Pygame where you can visualize many algorithms and see how they actually work.
 
-⚠️ Still in work in progress, I will add more features and improve the code.
+Adjust the value of `Window.FPS` *(the static variable in the Window class)* to change the speed of the program.
 
-⚠️ Not yet finished! You can only generate maze at the moment, not solve them.
+⚠️ Still in work in progress
+
+## Known issues:
+
+<ul>
+    <li>Nothing yet!</li>
+</ul>
+
+
 
 ## Support 👨‍💻
 
@@ -36,6 +44,14 @@ pip install -r requirements.txt
 ## Running 🏃
 
 After that you can proceed to start the program by running `main.py`.
+
+## TO-DO List
+
+<ul>
+    <li>Make a graphical menu instead of a console menu</li>
+    <li>Make the program more modular (still encountering issues with circular imports cuz the conception sucks)</li>
+    <li>Add more algorithms</li>
+</ul>
 
 ## Authors
 
