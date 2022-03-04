@@ -6,7 +6,7 @@ A simple maze generator and solver written in Python with Pygame where you can v
 
 Adjust the value of `Window.FPS` *(the static variable in the Window class)* to change the speed of the program.
 
-⚠️ Still in work in progress
+I will add more algorithm when I have time.
 
 ## Known issues:
 
