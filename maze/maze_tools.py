@@ -341,35 +341,37 @@ class MazeGenerator:
     def binary_tree(maze: m.Maze) -> None:
         for cell in maze.get_cells():
             top_and_left_neighbors = [cell.top_cell, cell.left_cell]
-            top_and_left_neighbors = list(filter(lambda x: x is not None, top_and_left_neighbors))
-            
+            top_and_left_neighbors = list(
+                filter(lambda x: x is not None, top_and_left_neighbors)
+            )
+
             if len(top_and_left_neighbors) == 0:
                 continue
-            
+
             toss_coin = random.randint(0, len(top_and_left_neighbors) - 1)
             cell.open_wall_with(top_and_left_neighbors[toss_coin])
 
             if Window.GENERATE_ANIMATION:
                 MazeDrawer.colorize_cell(cell, imposed_color=vc.Color.BLUE, priority=1)
                 MazeDrawer.refresh_drawing_on_screen(maze)
-                
+
     @staticmethod
     def sidewinder(maze: m.Maze) -> None:
         run_set = []
-        
+
         for cell in maze.get_cells():
-            
+
             # First row case
             if cell.top_cell is None and cell.right_cell is not None:
                 cell.open_wall_with(cell.right_cell)
                 continue
             elif cell.top_cell is None and cell.right_cell is None:
                 continue
-            
+
             # First case of each row
             if cell.left_cell is None:
                 run_set = [cell]
-                
+
             # Other cells of each row
             if random.getrandbits(1):
                 if cell.right_cell is not None:
@@ -383,13 +385,12 @@ class MazeGenerator:
                 chosen_cell.open_wall_with(chosen_cell.top_cell)
                 last_cell = run_set[-1].right_cell
                 run_set = [last_cell]
-                
+
             # Visual
             if Window.GENERATE_ANIMATION:
                 MazeDrawer.colorize_cell(cell, imposed_color=vc.Color.BLUE, priority=1)
                 MazeDrawer.refresh_drawing_on_screen(maze)
-            
-                    
+
 
 class MazeSolver:
     ALGORITHMS = []
@@ -419,45 +420,46 @@ class MazeSolver:
         Args:
             maze (Maze): An untouched maze object to be built upon
         """
+
         def __reconstruct_path(cameFrom: dict, current: m.Cell) -> list[m.Cell]:
             total_path = [current]
             while current in cameFrom.keys():
                 current = cameFrom[current]
                 total_path.insert(0, current)
             return total_path
-        
+
         def __heuristic(c1: m.Cell, c2: m.Cell) -> int:
             return abs(c1.x - c2.x) + abs(c1.y - c2.y)  # Manhattan distance
-        
+
         def __alg(start: m.Cell, goal: m.Cell) -> list[m.Cell]:
             closedSet = set()
             openSet = {start}
             cameFrom = {}
             gScore = {start: 0}
             fScore = {start: __heuristic(start, goal)}
-            
+
             while len(openSet) > 0:
                 current = min(openSet, key=lambda x: fScore[x])
                 if current == goal:
                     return __reconstruct_path(cameFrom, current)
-                
+
                 openSet.remove(current)
                 closedSet.add(current)
-                
+
                 for neighbor in current.get_neighbors_according_to_walls():
                     if neighbor in closedSet:
                         continue
-                    
+
                     tentative_gScore = gScore[current] + 1
                     if neighbor not in openSet:
                         openSet.add(neighbor)
                     elif tentative_gScore >= gScore[neighbor]:
                         continue
-                    
+
                     cameFrom[neighbor] = current
                     gScore[neighbor] = tentative_gScore
                     fScore[neighbor] = gScore[neighbor] + __heuristic(neighbor, goal)
-                    
+
                     if Window.SOLVE_ANIMATION:
                         MazeDrawer.colorize_cell(
                             current, imposed_color=vc.Color.BLUE, priority=3
@@ -473,9 +475,9 @@ class MazeSolver:
                             priority=2,
                         )
                         MazeDrawer.refresh_drawing_on_screen(maze)
-                    
+
             return []
-        
+
         return __alg(maze.cells[0][0], maze.cells[-1][-1])
 
 
@@ -526,10 +528,10 @@ class MazeDrawer(Window):
         self.maze_solver = maze_solver
         self.maze = maze
 
-        MazeDrawer.CELL_SIZE = (
-            Window.HEIGHT - 100
-        ) / maze.height  # Width and height of the cell
-        
+        MazeDrawer.CELL_SIZE = min(
+            (Window.HEIGHT - 100) / maze.height, (Window.WIDTH - 100) / maze.width
+        )  # Width and height of the cell
+
         self.final_res = []
 
         pygame.display.set_caption(
@@ -548,7 +550,9 @@ class MazeDrawer(Window):
         MazeDrawer.draw_maze(maze)
 
     @staticmethod
-    def _draw_line(start_coords: tuple, end_coords: tuple, color: vc.Color = vc.Color.BLACK) -> None:
+    def _draw_line(
+        start_coords: tuple, end_coords: tuple, color: vc.Color = vc.Color.BLACK
+    ) -> None:
         pygame.draw.line(Window.SCREEN, color, start_coords, end_coords)
 
     @staticmethod
@@ -693,9 +697,11 @@ class MazeDrawer(Window):
             MazeDrawer.draw_maze(self.maze)
 
             self.handle_events()
-            
+
             if self.maze.is_solved:
                 Window.SOLVE_ANIMATION = False
-                MazeDrawer.colorize_all_cells(self.final_res, imposed_color=vc.Color.YELLOW)
+                MazeDrawer.colorize_all_cells(
+                    self.final_res, imposed_color=vc.Color.YELLOW
+                )
 
             MazeDrawer.refresh_drawing_on_screen(self.maze)
