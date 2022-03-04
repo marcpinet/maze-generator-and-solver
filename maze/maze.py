@@ -57,6 +57,7 @@ class Cell:
         self.is_start = False
         self.is_end = False
         self.is_colored = False
+        self.distance = 0  # For Dijkstra algorithm
 
         self.number_of_uses = 0
         
