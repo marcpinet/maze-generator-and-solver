@@ -45,6 +45,7 @@ class MazeGenerator:
     def __init__(self, num: int):
         self.num = num
 
+        # This block of code allows me to retreive every method of this class (except the "system" and hidden ones)
         MazeGenerator.ALGORITHMS = {
             method_name.title().replace("_", " "): getattr(self, method)
             for method_name, method in zip(dir(self), dir(self))
@@ -398,6 +399,7 @@ class MazeSolver:
     def __init__(self, num: int):
         self.num = num
 
+        # This block of code allows me to retreive every method of this class (except the "system" and hidden ones)
         MazeSolver.ALGORITHMS = {
             method_name.title().replace("_", " "): getattr(self, method)
             for method_name, method in zip(dir(self), dir(self))
