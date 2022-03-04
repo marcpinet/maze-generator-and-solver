@@ -1,3 +1,6 @@
+from collections import deque
+import heapq
+
 import os
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
@@ -404,7 +407,7 @@ class MazeSolver:
             method_name.title().replace("_", " "): getattr(self, method)
             for method_name, method in zip(dir(self), dir(self))
             if callable(getattr(self, method_name))
-            and not method_name.startswith("__")
+            and not method_name.startswith("_")
             and method_name.lower() != "solve"
         }
 
@@ -416,71 +419,176 @@ class MazeSolver:
         return res
 
     @staticmethod
+    def __reconstruct_path(cameFrom: dict, current: m.Cell) -> list[m.Cell]:
+        total_path = [current]
+        while current in cameFrom.keys():
+            current = cameFrom[current]
+            total_path.insert(0, current)
+        return total_path
+
+    @staticmethod
+    def __heuristic(c1: m.Cell, c2: m.Cell) -> int:
+        return abs(c1.x - c2.x) + abs(c1.y - c2.y)  # Manhattan distance
+
+    @staticmethod
     def a_star(maze: m.Maze) -> list[m.Cell]:
         """A* algorithm
 
         Args:
             maze (Maze): An untouched maze object to be built upon
+
+        Returns:
+            list[Cell]: The shortest path found
         """
 
-        def __reconstruct_path(cameFrom: dict, current: m.Cell) -> list[m.Cell]:
-            total_path = [current]
-            while current in cameFrom.keys():
-                current = cameFrom[current]
-                total_path.insert(0, current)
-            return total_path
+        start = maze.cells[0][0]
+        goal = maze.cells[-1][-1]
 
-        def __heuristic(c1: m.Cell, c2: m.Cell) -> int:
-            return abs(c1.x - c2.x) + abs(c1.y - c2.y)  # Manhattan distance
+        closedSet = set()
+        openSet = {start}
+        cameFrom = {}
+        gScore = {start: 0}
+        fScore = {start: MazeSolver.__heuristic(start, goal)}
 
-        def __alg(start: m.Cell, goal: m.Cell) -> list[m.Cell]:
-            closedSet = set()
-            openSet = {start}
-            cameFrom = {}
-            gScore = {start: 0}
-            fScore = {start: __heuristic(start, goal)}
+        while len(openSet) > 0:
+            current = min(openSet, key=lambda x: fScore[x])
+            if current == goal:
+                return MazeSolver.__reconstruct_path(cameFrom, current)
 
-            while len(openSet) > 0:
-                current = min(openSet, key=lambda x: fScore[x])
-                if current == goal:
-                    return __reconstruct_path(cameFrom, current)
+            openSet.remove(current)
+            closedSet.add(current)
 
-                openSet.remove(current)
-                closedSet.add(current)
+            for neighbor in current.get_neighbors_according_to_walls():
+                if neighbor in closedSet:
+                    continue
 
-                for neighbor in current.get_neighbors_according_to_walls():
-                    if neighbor in closedSet:
-                        continue
+                tentative_gScore = gScore[current] + 1
+                if neighbor not in openSet:
+                    openSet.add(neighbor)
+                elif tentative_gScore >= gScore[neighbor]:
+                    continue
 
-                    tentative_gScore = gScore[current] + 1
-                    if neighbor not in openSet:
-                        openSet.add(neighbor)
-                    elif tentative_gScore >= gScore[neighbor]:
-                        continue
+                cameFrom[neighbor] = current
+                gScore[neighbor] = tentative_gScore
+                fScore[neighbor] = gScore[neighbor] + MazeSolver.__heuristic(
+                    neighbor, goal
+                )
 
-                    cameFrom[neighbor] = current
-                    gScore[neighbor] = tentative_gScore
-                    fScore[neighbor] = gScore[neighbor] + __heuristic(neighbor, goal)
+                if Window.SOLVE_ANIMATION:
+                    MazeDrawer.colorize_cell(
+                        current, imposed_color=vc.Color.BLUE, priority=3
+                    )
+                    MazeDrawer.colorize_all_cells(
+                        list(closedSet),
+                        imposed_color=vc.Color.GREEN,
+                        priority=2,
+                    )
+                    MazeDrawer.colorize_all_cells(
+                        list(openSet),
+                        imposed_color=vc.Color.YELLOW,
+                        priority=2,
+                    )
+                    MazeDrawer.refresh_drawing_on_screen(maze)
+
+        return []
+
+    @staticmethod
+    def breadth_first_search(maze: m.Maze) -> list[m.Cell]:
+        """Breadth-first search algorithm
+
+        Args:
+            maze (Maze): An untouched maze object to be built upon
+
+        Returns:
+            list[Cell]: The shortest path found
+        """
+        frontier = deque()
+        frontier.append(maze.cells[0][0])
+
+        came_from = {}
+        came_from[maze.cells[0][0]] = None
+
+        while len(frontier) > 0:
+
+            current = frontier.popleft()
+            if current == maze.cells[-1][-1]:
+                return MazeSolver.__reconstruct_path(came_from, current)
+
+            for neighbor in current.get_neighbors_according_to_walls():
+
+                if neighbor not in came_from.keys():
+                    frontier.append(neighbor)
+                    came_from[neighbor] = current
 
                     if Window.SOLVE_ANIMATION:
-                        MazeDrawer.colorize_cell(
-                            current, imposed_color=vc.Color.BLUE, priority=3
-                        )
                         MazeDrawer.colorize_all_cells(
-                            list(closedSet),
-                            imposed_color=vc.Color.GREEN,
-                            priority=2,
-                        )
-                        MazeDrawer.colorize_all_cells(
-                            list(openSet),
+                            list(came_from.keys()),
                             imposed_color=vc.Color.YELLOW,
                             priority=2,
                         )
+                        MazeDrawer.colorize_all_cells(
+                            [cell for cell in frontier] + [current],
+                            imposed_color=vc.Color.BLUE,
+                            priority=3,
+                        )
                         MazeDrawer.refresh_drawing_on_screen(maze)
+        return []
 
-            return []
+    @staticmethod
+    def dijkstra(maze: m.Maze) -> list[m.Cell]:
+        """Dijkstra algorithm
 
-        return __alg(maze.cells[0][0], maze.cells[-1][-1])
+        Args:
+            maze (Maze): An untouched maze object to be built upon
+
+        Returns:
+            list[Cell]: The shortest path found
+        """
+        
+        pq = []  # min-heap priority queue
+        start = maze.cells[0][0]
+        goal = maze.cells[-1][-1]
+        
+        came_from = {}
+        came_from[maze.cells[0][0]] = None
+        
+        # Setting every node distance to infinity
+        for cell in maze.get_cells():
+            cell.distance = float("inf")
+           
+        # Start to 0 
+        start.distance = 0
+        
+        # maintain min-heap invariant (minimum d Vertex at list index 0)
+        heapq.heappush(pq, (start.distance, start))
+        
+        while len(pq) > 0:
+            current = heapq.heappop(pq)[1]
+            if current == goal:
+                return MazeSolver.__reconstruct_path(came_from, current)
+            
+            for neighbor in current.get_neighbors_according_to_walls():
+                if neighbor.distance > current.distance + 1:
+                    neighbor.distance = current.distance + 1
+                    came_from[neighbor] = current
+                    heapq.heappush(pq, (neighbor.distance, neighbor))
+                    
+                    if Window.SOLVE_ANIMATION:
+                        MazeDrawer.colorize_all_cells(
+                            list(came_from.keys()),
+                            imposed_color=vc.Color.YELLOW,
+                            priority=2,
+                        )
+                        MazeDrawer.colorize_all_cells(
+                            [cell[1] for cell in pq] + [current],
+                            imposed_color=vc.Color.BLUE,
+                            priority=3,
+                        )
+                        MazeDrawer.refresh_drawing_on_screen(maze)
+        return []
+        
+            
+        
 
 
 class Window:
@@ -571,54 +679,57 @@ class MazeDrawer(Window):
         """Colorizes the cell according to its state"""
         spacement = 1
 
-        if imposed_color is not None:
-            pygame.draw.rect(
-                Window.SCREEN,
-                imposed_color,
-                (
-                    cell.x + spacement,
-                    cell.y + spacement,
-                    cell.length - spacement,
-                    cell.length - spacement,
-                ),
-            )
+        if cell is not None:
+            if imposed_color is not None:
+                pygame.draw.rect(
+                    Window.SCREEN,
+                    imposed_color,
+                    (
+                        cell.x + spacement,
+                        cell.y + spacement,
+                        cell.length - spacement,
+                        cell.length - spacement,
+                    ),
+                )
 
-        if imposed_color is None or priority <= 0:
-            if cell.is_visited and not cell.is_start and not cell.is_end:
-                if cell.number_of_uses == 1:
-                    pygame.draw.rect(
-                        Window.SCREEN,
-                        vc.Color.YELLOW,
-                        (
-                            cell.x + spacement,
-                            cell.y + spacement,
-                            cell.length - spacement,
-                            cell.length - spacement,
-                        ),
-                    )
-                # Will be used as a trick to colorize the cell again after passing on it again
-                else:
-                    pygame.draw.rect(
-                        Window.SCREEN,
-                        vc.Color.WHITE,
-                        (
-                            cell.x + spacement,
-                            cell.y + spacement,
-                            cell.length - spacement,
-                            cell.length - spacement,
-                        ),
-                    )
+            if imposed_color is None or priority <= 0:
+                if cell.is_visited and not cell.is_start and not cell.is_end:
+                    if cell.number_of_uses == 1:
+                        pygame.draw.rect(
+                            Window.SCREEN,
+                            vc.Color.YELLOW,
+                            (
+                                cell.x + spacement,
+                                cell.y + spacement,
+                                cell.length - spacement,
+                                cell.length - spacement,
+                            ),
+                        )
+                    # Will be used as a trick to colorize the cell again after passing on it again
+                    else:
+                        pygame.draw.rect(
+                            Window.SCREEN,
+                            vc.Color.WHITE,
+                            (
+                                cell.x + spacement,
+                                cell.y + spacement,
+                                cell.length - spacement,
+                                cell.length - spacement,
+                            ),
+                        )
 
-        if cell.is_start:
-            pygame.draw.rect(
-                Window.SCREEN, vc.Color.RED, (cell.x, cell.y, cell.length, cell.length)
-            )
-        elif cell.is_end:
-            pygame.draw.rect(
-                Window.SCREEN,
-                vc.Color.GREEN,
-                (cell.x, cell.y, cell.length, cell.length),
-            )
+            if cell.is_start:
+                pygame.draw.rect(
+                    Window.SCREEN,
+                    vc.Color.RED,
+                    (cell.x, cell.y, cell.length, cell.length),
+                )
+            elif cell.is_end:
+                pygame.draw.rect(
+                    Window.SCREEN,
+                    vc.Color.GREEN,
+                    (cell.x, cell.y, cell.length, cell.length),
+                )
 
     @staticmethod
     def draw_start_and_end_cells(maze) -> None:
