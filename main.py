@@ -69,7 +69,7 @@ def main():
     print()
 
     # Setting animation properties for pygame window
-    mt.Window.BUILD_ANIMATION = True if build_anim.lower() == "y" else False
+    mt.Window.GENERATE_ANIMATION = True if build_anim.lower() == "y" else False
     mt.Window.SOLVE_ANIMATION = True if solve_anim.lower() == "y" else False
 
     # Showing the maze on the pygame window
