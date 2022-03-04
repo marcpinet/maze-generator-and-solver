@@ -49,7 +49,7 @@ After that you can proceed to start the program by running `main.py`.
 
 <ul>
     <li>Make a graphical menu instead of a console menu</li>
-    <li>Make the program more modular (still encountering issues with circular imports cuz the conception sucks)</li>
+    <li>Make the program more modular (still encountering issues with circular imports cuz my conception sucks)</li>
     <li>Add more algorithms</li>
 </ul>
 
