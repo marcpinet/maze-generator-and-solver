@@ -11,7 +11,7 @@ I will add more algorithm when I have time.
 ## How to use
 
 Just launch the `main.py`, choose your algorithms (to generate and to solve.
-When the Pygame window is opened with the grid ready to be shaped, press <kbd>SPACE</kbd> to start the generation. At the end of it, press <kbd>SPACE</kbd> again to start solving it.
+When the Pygame window is opened with the grid ready to be shaped, press <kbd>SPACE</kbd> to start the generation. At the end of it, press <kbd>SPACE</kbd> again to start solving it. 
 
 ## Known issues
 
