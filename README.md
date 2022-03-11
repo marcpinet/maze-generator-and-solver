@@ -29,9 +29,9 @@ https://user-images.githubusercontent.com/52708150/156903579-dfd3e9c6-e71b-4560-
 
 ## Support 👨‍💻
 
-Any problems with running the script and any questions please create a new issue [here](https://github.com/marcpinet/epidemic-modeling/issues/new?assignees=&labels=&template=bug_report.md&title=).
+Any problems with running the script and any questions please create a new issue [here](https://github.com/marcpinet/maze-generator-and-solver/issues/new?assignees=&labels=&template=bug_report.md&title=).
 
-You can also contribute to this project by requesting new features [here](https://github.com/marcpinet/epidemic-modeling/new?assignees=&labels=&template=feature_request.md&title=).
+You can also contribute to this project by requesting new features [here](https://github.com/marcpinet/maze-generator-and-solver/new?assignees=&labels=&template=feature_request.md&title=).
 
 I never ask for money for my open source projects. However, you can still tip me if you want.
 I am a [Brave Verified Creator](https://i.imgur.com/fOUfdM5.png)!
