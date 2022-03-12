@@ -2,6 +2,7 @@ from collections import deque
 import heapq
 
 import os
+import keyboard
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
@@ -608,6 +609,37 @@ class Window:
         pygame.display.set_caption("MazeGen&Solve")
         Window.RUNNING = False
         Window.CLOCK = pygame.time.Clock()
+        
+    @staticmethod
+    def handle_speed_keys() -> None:
+        """Must be in a loop"""
+        dec = 0
+        try:
+            if keyboard.is_pressed("right"):
+                if dec == 0:
+                    Window.FPS += 1
+                    dec += 1
+                else:
+                    dec += 1
+            if keyboard.is_pressed("left"):
+                if dec == 0:
+                    Window.FPS -= 1
+                    dec += 1
+                else:
+                    dec += 1
+        except:
+            pass
+
+    @staticmethod
+    def handle_quit_keyboard() -> None:
+        """Must be put in a loop !!!!"""
+        try:
+            if keyboard.is_pressed("esc"):
+                Window.RUNNING = False
+                pygame.quit()
+                quit()
+        except:
+            pass
 
     @abstractmethod
     def start(self) -> None:
@@ -658,6 +690,9 @@ class MazeDrawer(Window):
         Window.CLOCK.tick(Window.FPS)  # Limit FPS
         Window.refresh_all()
         MazeDrawer.draw_maze(maze)
+        Window.handle_quit_keyboard()
+        Window.handle_speed_keys()
+        print(Window.FPS)
 
     @staticmethod
     def _draw_line(

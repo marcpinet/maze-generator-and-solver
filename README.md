@@ -4,14 +4,13 @@
 
 A simple maze generator and solver written in Python with Pygame where you can visualize many algorithms and see how they actually work.
 
-Adjust the value of `Window.FPS` *(the static variable in the Window class)* to change the speed of the program.
+You can adjust the speed using <kbd>→</kbd> or <kbd>←</kbd> and shuffle the array at the end of the sorting to restart the algorithm by pressing <kbd>SPACE</kbd>. Finally, press <kbd>ESC</kbd> to exit.
 
 I will add more algorithm when I have time.
 
 ## How to use
 
-Just launch the `main.py`, choose your algorithms (to generate and to solve.
-When the Pygame window is opened with the grid ready to be shaped, press <kbd>SPACE</kbd> to start the generation. At the end of it, press <kbd>SPACE</kbd> again to start solving it. 
+Just launch the `main.py`, choose your algorithms and start the algorithms using <kbd>SPACE</kbd>.
 
 ## Known issues
 
