@@ -692,7 +692,6 @@ class MazeDrawer(Window):
         MazeDrawer.draw_maze(maze)
         Window.handle_quit_keyboard()
         Window.handle_speed_keys()
-        print(Window.FPS)
 
     @staticmethod
     def _draw_line(
